@@ -92,7 +92,7 @@ public class AlgoExperiment {
      * @param batchGrowthFactor multiplied by previous batch size before batchGrowthConstant is added
      * @param algoArray an array of algorithms that takes a complete, directional adjacency matrix and outputs a hamiltonian path
      */
-    public void runExperiment(int numBatches, int batchSize, int startBatchGraphSize, int batchGrowthConstant, int batchGrowthFactor, double matrixDensity, Function<ArrayList<ArrayList<Integer>>, ArrayList<Integer>>[] algoArray) {
+    public void runGeneratedMatrixExperiment(int numBatches, int batchSize, int startBatchGraphSize, int batchGrowthConstant, int batchGrowthFactor, double matrixDensity, Function<ArrayList<ArrayList<Integer>>, ArrayList<Integer>>[] algoArray) {
         int n = startBatchGraphSize;
         ArrayList<ArrayList<Integer>> matrix;
         ArrayList<Integer> pathResult;
@@ -117,6 +117,15 @@ public class AlgoExperiment {
             n = (n * batchGrowthFactor) + batchGrowthConstant;
         }
         this.results = results;
+    }
+
+    public void runDatasetExperiment(String dataset, Function<ArrayList<ArrayList<Integer>>, ArrayList<Integer>>[] algoArray) {
+        File dir = new File(dataset);
+        File[] files = dir.listFiles();
+
+        for (File file  : files) {
+
+        }
     }
 
     public void runACMExperiment(int numBatches, int batchSize, int startBatchGraphSize, int batchGrowthConstant, int batchGrowthFactor, ArrayList<ACMPackage> paramArray) {

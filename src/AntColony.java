@@ -107,7 +107,7 @@ public class AntColony {
             colony[i].resetAnt();
     }
 
-    public static ArrayList<Integer> andColonyMethodDefaultTSP(ArrayList<ArrayList<Integer>> adjMatrix) {
+    public static ArrayList<Integer> antColonyMethodDefaultTSP(ArrayList<ArrayList<Integer>> adjMatrix) {
         return antColonyMethodTSP(10, 25, .9, 2, .1, .1, adjMatrix);
     }
 

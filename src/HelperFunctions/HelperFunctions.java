@@ -13,7 +13,6 @@ public class HelperFunctions {
             matrixScanner.useDelimiter(System.lineSeparator());
             Scanner rowScanner;
             ArrayList<ArrayList<Integer>> matrix = new ArrayList<>();
-            System.out.println("FILE");
             //Import Cycle Set into 2d Vector
             while (matrixScanner.hasNextLine()) {
                 matrix.add(new ArrayList<>());
@@ -30,7 +29,7 @@ public class HelperFunctions {
         }
     }
 
-    public static ArrayList<ArrayList<Integer>> readAdjacencyList(String fileName, boolean isDirected) {
+    public static ArrayList<ArrayList<Integer>> readVLSIAdjacencyList(String fileName, boolean isDirected) {
         ArrayList<ArrayList<Integer>> adjacencyMatrix = new ArrayList<>();
         int node;
         int neighbor;

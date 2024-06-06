@@ -1,7 +1,5 @@
 import HelperFunctions.HelperFunctions;
 
-import java.lang.reflect.Array;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.function.Function;
 
@@ -32,10 +30,6 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        String matrixFileName = "bcl380.tsp";
-        String setFileName = "inputCycles.txt";
-        //String verticesFileName = "vertices.txt";
-        String outputName = "outputMatrix.txt";
 
         //ArrayList<Integer> vertices = readVertices(verticesFileName);
         //ArrayList<ArrayList<Integer>> cycles = HelperFunctions.readAdjMatrixFile(setFileName, null);
@@ -85,14 +79,15 @@ public class Main {
             //Run Experiment
             AlgoExperiment expRunner = new AlgoExperiment();
             Function<ArrayList<ArrayList<Integer>>, ArrayList<Integer>>[] allAlgorithms = new Function[3];
-            Function<ArrayList<ArrayList<Integer>>, ArrayList<Integer>>[] heuristicAlgorithms = new Function[2];
+            Function<ArrayList<ArrayList<Integer>>, ArrayList<Integer>>[] heuristicAlgorithms = new Function[3];
 
             allAlgorithms[0] = BruteForceAlgorithm::bruteForceTSP;
             allAlgorithms[1] = GreedyAlgorithim::greedyTSP;
-            allAlgorithms[2] = AntColony::andColonyMethodDefaultTSP; //10 iteration ACM with params 10, 2, .9, .1, .1 (As described in orig paper)
+            allAlgorithms[2] = AntColony::antColonyMethodDefaultTSP; //10 iteration ACM with params 10, 2, .9, .1, .1 (As described in orig paper)
 
-            heuristicAlgorithms[0] = AntSystem::andColonyMethodDefaultTSP;
-            heuristicAlgorithms[1] = AntColony::andColonyMethodDefaultTSP; //10 iteration ACM with params 10, 2, .9, .1, .1 (As described in orig paper)
+            heuristicAlgorithms[0] = AntSystem::antSystemMethodDefaultTSP;
+            heuristicAlgorithms[1] = AntColony::antColonyMethodDefaultTSP; //10 iteration ACM with params 10, 2, .9, .1, .1 (As described in orig paper)
+            heuristicAlgorithms[2] = GreedyAlgorithim::greedyTSP;
 
             //0expRunner.runExperiment(8, 20, 4, 1, 1, allAlgorithms);
             //expRunner.exportResults("smallExp02.csv");
@@ -101,7 +96,7 @@ public class Main {
             //double[] sparsity = {1};
 
             for (int i = 0; i < sparsity.length; i++) {
-                expRunner.runExperiment(7, 50, 10, 0, 2, sparsity[i], heuristicAlgorithms);
+                expRunner.runGeneratedMatrixExperiment(7, 50, 10, 0, 2, sparsity[i], heuristicAlgorithms);
                 expRunner.exportResults(String.format("%fSparseMatrixTesting.csv", sparsity[i]*100), false);
                 expRunner.exportResults("MasterSparseMatrixTesting.csv", i != 0, String.format( "%3.0f",sparsity[i]*100));
             }

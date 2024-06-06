@@ -1,7 +1,6 @@
 import HelperFunctions.HelperFunctions;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Random;
 
 public class AntSystem {
@@ -114,7 +113,7 @@ public class AntSystem {
             colony[i].resetAnt();
     }
 
-    public static ArrayList<Integer> andColonyMethodDefaultTSP(ArrayList<ArrayList<Integer>> adjMatrix) {
+    public static ArrayList<Integer> antSystemMethodDefaultTSP(ArrayList<ArrayList<Integer>> adjMatrix) {
         return antColonyMethodTSP(10, 25, .9, 2, .1, .1, adjMatrix);
     }
 
