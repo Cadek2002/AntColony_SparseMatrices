@@ -1,11 +1,10 @@
-import HelperFunctions.HelperFunctions;
-
+import HelperFunctions.*;
 import java.util.ArrayList;
 import java.util.Random;
 
 public class AntSystem {
     static Random r = new Random();
-    int numAnts, currentBest;
+    int numAnts, currentBest, iterationsTillSuccess;
     ArrayList<Integer> bestPath;
     Ant[] colony;
     double biasedExplorationCoefficient, distanceBiasCoefficient, localPheromoneUpdateCoefficient, globalPheromoneDecayCoefficient, initialPheromone;
@@ -23,7 +22,23 @@ public class AntSystem {
         this.localPheromoneUpdateCoefficient = localPheromoneUpdateCoefficient;
         colony = new Ant[numAnts];
 
-        initialPheromone = HelperFunctions.calculateCost(GreedyAlgorithim.greedyTSP(adjacencyMatrix), adjacencyMatrix, true);
+//        initialPheromone = HelperFunctions.calculateCost(GreedyAlgorithim.greedyTSP(adjacencyMatrix), adjacencyMatrix, true);
+//        if (initialPheromone == -1) initialPheromone = 5 * adjacencyMatrix.size();
+
+        //NEW Initialization for Sparse Graphs (Average Choice Index)
+        int sum, numViable;
+        initialPheromone = 0;
+        for (int i = 0; i < adjacencyMatrix.size(); i++) {
+            sum = 0;
+            numViable = 0;
+            for (int j = 0; i < adjacencyMatrix.size(); j++) {
+                if (adjacencyMatrix.get(i).get(j) > 0) {
+                    sum +=  adjacencyMatrix.get(i).get(j);
+                    numViable++;
+                }
+            }
+            initialPheromone += sum/(double)numViable;
+        }
 
         for (int i = 0; i < numAnts; i++) colony[i] = new Ant();
 
@@ -32,9 +47,10 @@ public class AntSystem {
             pheromoneMatrix.add(new ArrayList<>(adjacencyMatrix.size()));
             for (int j = 0; j < adjacencyMatrix.size(); j++) pheromoneMatrix.get(i).add(initialPheromone);
         }
+        iterationsTillSuccess = -1;
     }
 
-    public static ArrayList<Integer> antColonyMethodTSP(int numAnts, int numIterations, double biasedExplorationCoefficient, double distanceBiasCoefficient, double globalPheromoneDecayCoefficient, double localPheromoneUpdateCoefficient, ArrayList<ArrayList<Integer>> adjMatrix) {
+    public static AlgoResult antColonyMethodTSP(int numAnts, int numIterations, double biasedExplorationCoefficient, double distanceBiasCoefficient, double globalPheromoneDecayCoefficient, double localPheromoneUpdateCoefficient, ArrayList<ArrayList<Integer>> adjMatrix) {
         AntSystem antColony = new AntSystem(numAnts, biasedExplorationCoefficient, distanceBiasCoefficient, globalPheromoneDecayCoefficient, localPheromoneUpdateCoefficient, adjMatrix);
         ArrayList<Integer> best;
         int startingPoint;
@@ -53,7 +69,8 @@ public class AntSystem {
             antColony.evaluateColony();
         }
         antColony.bestPath.remove(antColony.bestPath.size() - 1);
-        return antColony.bestPath;
+        AlgoResult result = new AlgoResult(antColony.currentBest, antColony.bestPath, antColony.iterationsTillSuccess);
+        return result;
     }
     public static ArrayList<Integer> antColonyMethodTSPIterationTracking(int logInterval, int numAnts, int numIterations, double biasedExplorationCoefficient, double distanceBiasCoefficient, double globalPheromoneDecayCoefficient, double localPheromoneUpdateCoefficient, ArrayList<ArrayList<Integer>> adjMatrix) {
         AntSystem antColony = new AntSystem(numAnts, biasedExplorationCoefficient, distanceBiasCoefficient, globalPheromoneDecayCoefficient, localPheromoneUpdateCoefficient, adjMatrix);
@@ -93,6 +110,7 @@ public class AntSystem {
         for (int i = 0; i < numAnts; i++) {
             //System.out.printf(" %d", colony[i].cost);
             if (currentBest == -1 || (currentBest > colony[i].cost && colony[i].cost != -1)) {
+                if (currentBest == -1 && colony[i].cost != -1) iterationsTillSuccess = i;
                 currentBest = colony[i].cost;
                 bestPath = colony[i].path;
             }
@@ -113,8 +131,8 @@ public class AntSystem {
             colony[i].resetAnt();
     }
 
-    public static ArrayList<Integer> antSystemMethodDefaultTSP(ArrayList<ArrayList<Integer>> adjMatrix) {
-        return antColonyMethodTSP(10, 25, .9, 2, .1, .1, adjMatrix);
+    public static AlgoResult antSystemMethodDefaultTSP(ArrayList<ArrayList<Integer>> adjMatrix) {
+        return antColonyMethodTSP(10, 50, .9, 2, .1, .1, adjMatrix);
     }
 
     //Defines Ant State
@@ -160,9 +178,6 @@ public class AntSystem {
             //System.out.printf("Cost: %d\tdistanceBias: %f\tPheromone: %f\n", adjacencyMatrix.get(r).get(s), distanceBiasCoefficient, pheromoneMatrix.get(r).get(s));
             return Math.pow(1 / (double) adjacencyMatrix.get(r).get(s), distanceBiasCoefficient) * pheromoneMatrix.get(r).get(s);
         }
-
-
-        
         public int chooseEdge(boolean greedy) {
             //Utilize edge cost and pheromone concentration and heuristic probability function to determine edge, update state accordingly
 

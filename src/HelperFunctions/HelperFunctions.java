@@ -6,6 +6,7 @@ import java.util.stream.IntStream;
 import static java.lang.Integer.parseInt;
 
 public class HelperFunctions {
+
     //File Input
     public static ArrayList<ArrayList<Integer>> readAdjMatrixFile(String inputFile, ArrayList<Integer> verticesMap) {
         try {
@@ -45,6 +46,7 @@ public class HelperFunctions {
 
 
                     dimension = Integer.parseInt(line.split(":")[1].trim())+1;
+                    System.out.printf("File: %s Dimension: %d\n",fileName, dimension);
                     //System.out.println(dimension);
                     for (int i = 0; i < dimension; i++) {
                         adjacencyMatrix.add(new ArrayList<>(Collections.nCopies(dimension, 0)));

@@ -1,4 +1,5 @@
 import HelperFunctions.HelperFunctions;
+import HelperFunctions.AlgoResult;
 
 import java.io.*;
 import java.time.Duration;
@@ -8,46 +9,6 @@ import java.util.function.Function;
 
 public class AlgoExperiment {
     ArrayList<ArrayList<AlgoResult>> results;
-    private class AlgoResult {
-        int cost;
-        ArrayList<Integer> path;
-        long Seconds;
-        long NanoSeconds;
-        int batchID;
-        String alias;
-        int iteration;
-
-        public AlgoResult(int batchID, int cost, ArrayList<Integer> path, long seconds, long nanoSeconds) {
-            this.cost = cost;
-            this.path = path;
-            Seconds = seconds;
-            NanoSeconds = nanoSeconds;
-            this.batchID = batchID;
-            alias = Integer.toString(batchID);
-            this.iteration = -1;
-
-        }
-
-        public AlgoResult(String alias, int batchID, int cost, ArrayList<Integer> path, long seconds, long nanoSeconds) {
-            this.cost = cost;
-            this.path = path;
-            Seconds = seconds;
-            NanoSeconds = nanoSeconds;
-            this.batchID = batchID;
-            this.alias = alias;
-            this.iteration = -1;
-        }
-
-        public AlgoResult(String alias,int iteration, int batchID, int cost, ArrayList<Integer> path, long seconds, long nanoSeconds) {
-            this.cost = cost;
-            this.path = path;
-            Seconds = seconds;
-            NanoSeconds = nanoSeconds;
-            this.batchID = batchID;
-            this.alias = alias;
-            this.iteration = iteration;
-        }
-    }
     public static class ACMPackage {
         int ants, iterations;
         double biasedExplorationCoefficient, distanceBiasCoefficient, localPheromoneUpdateCoefficient, globalPheromoneDecayCoefficient;
@@ -90,15 +51,16 @@ public class AlgoExperiment {
      * @param startBatchGraphSize initial size of the matricies for batch 0
      * @param batchGrowthConstant added to matrix size after each batch
      * @param batchGrowthFactor multiplied by previous batch size before batchGrowthConstant is added
-     * @param algoArray an array of algorithms that takes a complete, directional adjacency matrix and outputs a hamiltonian path
+     * @param algoArray an array of algorithms that takes a complete, directional adjacency matrix and outputs a result item
      */
-    public void runGeneratedMatrixExperiment(int numBatches, int batchSize, int startBatchGraphSize, int batchGrowthConstant, int batchGrowthFactor, double matrixDensity, Function<ArrayList<ArrayList<Integer>>, ArrayList<Integer>>[] algoArray) {
+    public void runGeneratedMatrixExperiment(int numBatches, int batchSize, int startBatchGraphSize, int batchGrowthConstant, int batchGrowthFactor, double matrixDensity, Function<ArrayList<ArrayList<Integer>>, AlgoResult>[] algoArray) {
         int n = startBatchGraphSize;
         ArrayList<ArrayList<Integer>> matrix;
-        ArrayList<Integer> pathResult;
+        AlgoResult thisResult;
         System.out.println("\nRunning Experiment");
 
         ArrayList<ArrayList<AlgoResult>> results = new ArrayList<>(algoArray.length);
+
         for (int i = 0; i < algoArray.length; i++) results.add(new ArrayList<>(numBatches * batchSize));
 
         for (int i = 0; i < numBatches; i++) {
@@ -106,26 +68,52 @@ public class AlgoExperiment {
             for (int j = 0; j < batchSize; j++) {
                 System.out.printf(" %d", j);
                 matrix = HelperFunctions.createMatrix(n, 1, 9, matrixDensity, String.format("experimentMatrices: %d_matrix%d_%d.csv", n, i, j));
-                HelperFunctions.printMatrix(matrix);
+                //HelperFunctions.printMatrix(matrix);
                 for (int k = 0; k < algoArray.length; k++) {
                     Instant start = Instant.now();
-                    pathResult = algoArray[k].apply(matrix);
+                    thisResult = algoArray[k].apply(matrix);
                     Instant end = Instant.now();
-                    results.get(k).add(new AlgoResult(i, HelperFunctions.calculateCost(pathResult, matrix, true), pathResult, Duration.between(start, end).getSeconds(), Duration.between(start, end).getNano()));
+                    //This is annoying I know
+                    thisResult.alias = String.valueOf(k);
+                    thisResult.iteration = j;
+                    thisResult.batchID = i;
+                    thisResult.NanoSeconds = Duration.between(start, end).getNano();
+                    thisResult.Seconds = Duration.between(start, end).getSeconds();
+
+                    results.get(k).add(thisResult);
                 }
             }
             n = (n * batchGrowthFactor) + batchGrowthConstant;
         }
         this.results = results;
+        System.out.printf("\nResults Size: %d", results.size());
     }
 
     public void runDatasetExperiment(String dataset, Function<ArrayList<ArrayList<Integer>>, ArrayList<Integer>>[] algoArray) {
         File dir = new File(dataset);
         File[] files = dir.listFiles();
 
-        for (File file  : files) {
+        ArrayList<ArrayList<Integer>> matrix;
+        ArrayList<Integer> pathResult;
 
+        ArrayList<ArrayList<AlgoResult>> results = new ArrayList<>(algoArray.length);
+        for (int i = 0; i < algoArray.length; i++) results.add(new ArrayList<>(files.length));
+
+
+        System.out.println("\nRunning Dataset Experiment");
+        for (int i = 0; i < files.length; i++) {
+            matrix = HelperFunctions.readVLSIAdjacencyList(files[i].getAbsolutePath(), false);
+            System.out.println(files[i].getName());
+            //HelperFunctions.printMatrix(matrix);
+            for (int k = 0; k < algoArray.length; k++) {
+                Instant start = Instant.now();
+                pathResult = algoArray[k].apply(matrix);
+                Instant end = Instant.now();
+                results.get(k).add(new AlgoResult(files[i].getName(), i, HelperFunctions.calculateCost(pathResult, matrix, true), pathResult, Duration.between(start, end).getSeconds(), Duration.between(start, end).getNano()));
+            }
         }
+
+        this.results = results;
     }
 
     public void runACMExperiment(int numBatches, int batchSize, int startBatchGraphSize, int batchGrowthConstant, int batchGrowthFactor, ArrayList<ACMPackage> paramArray) {
@@ -152,6 +140,7 @@ public class AlgoExperiment {
             n = (n * batchGrowthFactor) + batchGrowthConstant;
         }
         this.results = results;
+        System.out.println(results.size());
     }
 
 
@@ -161,12 +150,12 @@ public class AlgoExperiment {
         try {
             BufferedWriter writer = new BufferedWriter(new FileWriter(output, append));
             if (!append)
-                writer.write("Algorithm, ResultID, BatchID, Cost, Path, Seconds, Nanoseconds, Total\n");
+                writer.write("Algorithm, ResultID, BatchID, Cost, Path, Seconds, Nanoseconds, Total, Success Iteration, Sparsity\n");
 
             for (int i = 0; i < results.size(); i++) {
                 for (AlgoResult res : results.get(i))
-                    if (res.iteration == -1) {
-                        writer.write(String.format("%s,%d,%d,%d,%s,%d,%d,%f", res.alias, i, res.batchID, res.cost, HelperFunctions.getStringCSV(res.path), res.Seconds, res.NanoSeconds, res.Seconds + (double) res.NanoSeconds / 1000000000));
+                    if (res.iteration != -1) {
+                        writer.write(String.format("%s,%d,%d,%d,%s,%d,%d,%f, %d", res.alias, i, res.batchID, res.cost, HelperFunctions.getStringCSV(res.path), res.Seconds, res.NanoSeconds, res.Seconds + (double) res.NanoSeconds / 1000000000, res.successIteration));
                         for (String item : additionalArgs) {
                             writer.write(String.format(",%s", item));
                         }
