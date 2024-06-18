@@ -13,9 +13,10 @@ public class AntColony {
     double biasedExplorationCoefficient, distanceBiasCoefficient, localPheromoneUpdateCoefficient, globalPheromoneDecayCoefficient, initialPheromone;
     ArrayList<ArrayList<Double>> pheromoneMatrix;
     ArrayList<ArrayList<Integer>> adjacencyMatrix;
+    ArrayList<Integer> numProspectsList;
 
 
-    public AntColony(int numAnts, double biasedExplorationCoefficient, double distanceBiasCoefficient, double globalPheromoneDecayCoefficient, double localPheromoneUpdateCoefficient, ArrayList<ArrayList<Integer>> adjacencyMatrix) {
+    public AntColony(int numAnts, double biasedExplorationCoefficient, double distanceBiasCoefficient, double globalPheromoneDecayCoefficient, double localPheromoneUpdateCoefficient, boolean lookahead, ArrayList<ArrayList<Integer>> adjacencyMatrix) {
         this.numAnts = numAnts;
         this.adjacencyMatrix = adjacencyMatrix;
         currentBest = -1;
@@ -26,36 +27,43 @@ public class AntColony {
         this.localPheromoneUpdateCoefficient = localPheromoneUpdateCoefficient;
         colony = new Ant[numAnts];
         //initialPheromone = HelperFunctions.calculateCost(GreedyAlgorithim.greedyTSP(adjacencyMatrix), adjacencyMatrix, true);
-        //if (initialPheromone == -1) initialPheromone = 5 * adjacencyMatrix.size();
-
         //NEW Initialization for Sparse Graphs (Average Choice Index)
         int sum, numViable;
         initialPheromone = 0;
         for (int i = 0; i < adjacencyMatrix.size(); i++) {
             sum = 0;
             numViable = 0;
-            for (int j = 0; i < adjacencyMatrix.size(); j++) {
+            for (int j = 0; j < adjacencyMatrix.size(); j++) {
                 if (adjacencyMatrix.get(i).get(j) > 0) {
-                    sum +=  adjacencyMatrix.get(i).get(j);
+                    sum += adjacencyMatrix.get(i).get(j);
                     numViable++;
                 }
             }
-            initialPheromone += sum/(double)numViable;
+            initialPheromone += sum / (double) numViable;
         }
 
 
-        for (int i = 0; i < numAnts; i++) colony[i] = new Ant();
+        for (int i = 0; i < numAnts; i++) colony[i] = new AntColony.Ant();
 
         pheromoneMatrix = new ArrayList<>(adjacencyMatrix.size());
+        //Initialize PheromoneMatrix and numProspects list
+        int numProspects;
+        numProspectsList = new ArrayList<>(adjacencyMatrix.size());
         for (int i = 0; i < adjacencyMatrix.size(); i++) {
             pheromoneMatrix.add(new ArrayList<>(adjacencyMatrix.size()));
-            for (int j = 0; j < adjacencyMatrix.size(); j++) pheromoneMatrix.get(i).add(initialPheromone);
+            numProspects = 0;
+            for (int j = 0; j < adjacencyMatrix.size(); j++) {
+                pheromoneMatrix.get(i).add(initialPheromone);
+                if (adjacencyMatrix.get(i).get(j) > 0) numProspects++;
+                numProspectsList.add(numProspects);
+            }
         }
-        iterationsTillSuccess = 0;
+
+        iterationsTillSuccess = -1;
     }
 
     public static AlgoResult antColonyMethodTSP(int numAnts, int numIterations, double biasedExplorationCoefficient, double distanceBiasCoefficient, double globalPheromoneDecayCoefficient, double localPheromoneUpdateCoefficient, ArrayList<ArrayList<Integer>> adjMatrix) {
-        AntColony antColony = new AntColony(numAnts, biasedExplorationCoefficient, distanceBiasCoefficient, globalPheromoneDecayCoefficient, localPheromoneUpdateCoefficient, adjMatrix);
+        AntColony antColony = new AntColony(numAnts, biasedExplorationCoefficient, distanceBiasCoefficient, globalPheromoneDecayCoefficient, localPheromoneUpdateCoefficient, false, adjMatrix);
         ArrayList<Integer> best;
         int startingPoint;
 
@@ -73,11 +81,12 @@ public class AntColony {
             antColony.evaluateColony();
         }
         antColony.bestPath.remove(antColony.bestPath.size() - 1);
-        AlgoResult result = new AlgoResult(antColony.currentBest, antColony.bestPath, antColony.iterationsTillSuccess);
+        AlgoResult result = new AlgoResult("bad", antColony.currentBest, antColony.bestPath, antColony.iterationsTillSuccess);
         return result;
     }
+
     public static ArrayList<Integer> antColonyMethodTSPIterationTracking(int logInterval, int numAnts, int numIterations, double biasedExplorationCoefficient, double distanceBiasCoefficient, double globalPheromoneDecayCoefficient, double localPheromoneUpdateCoefficient, ArrayList<ArrayList<Integer>> adjMatrix) {
-        AntSystem antColony = new AntSystem(numAnts, biasedExplorationCoefficient, distanceBiasCoefficient, globalPheromoneDecayCoefficient, localPheromoneUpdateCoefficient, adjMatrix);
+        AntSystem antColony = new AntSystem(numAnts, numIterations, biasedExplorationCoefficient, distanceBiasCoefficient, globalPheromoneDecayCoefficient, localPheromoneUpdateCoefficient, false, true);
         ArrayList<Integer> bestHistory = new ArrayList<>();
         int startingPoint;
 
@@ -176,11 +185,17 @@ public class AntColony {
             return Math.pow(1 / (double) adjacencyMatrix.get(r).get(s), distanceBiasCoefficient) * pheromoneMatrix.get(r).get(s);
         }
 
+        double calculateEdgeWeightIncludeFutureProspects(int r, int s) {
+            if (adjacencyMatrix.get(r).get(s) <= 0) return 0;
+            //System.out.printf("Cost: %d\tdistanceBias: %f\tPheromone: %f\n", adjacencyMatrix.get(r).get(s), distanceBiasCoefficient, pheromoneMatrix.get(r).get(s));
+            return Math.pow(1 / (double) adjacencyMatrix.get(r).get(s), distanceBiasCoefficient) * pheromoneMatrix.get(r).get(s) * ((double) adjacencyMatrix.size() / numProspectsList.get(s));
+        }
+
         public void chooseEdge(boolean greedy) {
             //Utilize edge cost and pheromone concentration and heuristic probability function to determine edge, update state accordingly
 
             //Generate Probability Distribution from Candidate List
-             ArrayList<edgeWeightPair> candidateProb = new ArrayList<>(matrixSize);
+            ArrayList<edgeWeightPair> candidateProb = new ArrayList<>(matrixSize);
             double iterativeProbability = 0;
             double currentProbability, maxProbability = 0;
             int maxProbabilityIndex = -1, choice = -1;
@@ -190,7 +205,7 @@ public class AntColony {
                     //If the city hasn't been visited
                     if (!candidateList[i]) {
                         //Calculate probability of current edge
-                        currentProbability = calculateEdgeWeight(path.get(path.size() - 1), i);
+                        currentProbability = calculateEdgeWeightIncludeFutureProspects(path.get(path.size() - 1), i);
                         //Set Iterative probability
                         iterativeProbability += currentProbability;
                         //Create data pair
@@ -204,18 +219,17 @@ public class AntColony {
                 }
                 //choose edge based on probability depending on greedy setting
                 choice = (greedy ? maxProbabilityIndex : biasedRandomEdgeSelection(candidateProb));
-            } else choice = adjacencyMatrix.get(path.get(path.size()-1)).get(path.get(0)) >= 1 ? path.get(0) : -1;
+            } else choice = adjacencyMatrix.get(path.get(path.size() - 1)).get(path.get(0)) >= 1 ? path.get(0) : -1;
             //Local Update Pheromone (Edge distance * p + (1-p) * 1/(n * Lnn)
 
-           //Update Ant State
+            //Update Ant State
             if (choice != -1) {
                 pheromoneMatrix.get(path.get(path.size() - 1)).set(choice, pheromoneMatrix.get(path.get(path.size() - 1)).get(choice)
                         * (1 - localPheromoneUpdateCoefficient) + localPheromoneUpdateCoefficient * (1 / (matrixSize * initialPheromone)));
                 cost += adjacencyMatrix.get(path.get(path.size() - 1)).get(choice);
                 candidateList[choice] = true;
                 path.add(choice);
-            }
-            else {
+            } else {
                 cost = -1;
             }
             //System.out.printf("Greedy: %b\t%s\tCost: %d\n",greedy, path, cost);

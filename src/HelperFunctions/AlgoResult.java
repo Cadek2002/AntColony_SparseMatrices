@@ -13,7 +13,8 @@ public class AlgoResult {
     public int successIteration;
 
 
-    public AlgoResult(int cost, ArrayList<Integer> path, int successIteration) {
+    public AlgoResult(String algoAlias, int cost, ArrayList<Integer> path, int successIteration) {
+        this.alias = algoAlias;
         this.cost = cost;
         this.path = path;
         this.successIteration = successIteration;

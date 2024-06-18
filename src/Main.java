@@ -34,22 +34,24 @@ public class Main {
 
         //Run Experiment
         AlgoExperiment expRunner = new AlgoExperiment();
-        Function<ArrayList<ArrayList<Integer>>, AlgoResult>[] heuristicAlgorithms = new Function[2];
+        Function<ArrayList<ArrayList<Integer>>, AlgoResult>[] heuristicAlgorithms = new Function[3];
         //10 iteration ACM with params 10, 2, .9, .1, .1 (As described in orig paper)
 
-        heuristicAlgorithms[0] = AntSystem::antSystemMethodDefaultTSP;
-        heuristicAlgorithms[1] = AntColony::antColonyMethodDefaultTSP; //10 iteration ACM with params 10, 2, .9, .1, .1 (As described in orig paper)
+        heuristicAlgorithms[0] = AntSystem.stageAntSystemTSP("LookaheadAntSystem",10, 25, .9, 2, .1, .1, true, false);
+        heuristicAlgorithms[1] = AntSystem.stageAntSystemTSP("AntSystem",10, 25, .9, 2, .1, .1, false, false);
+        heuristicAlgorithms[2] = AntSystem.stageAntSystemTSP("AntColony",10, 25, .9, 2, .1, .1, false, true);
+        //10 iteration ACM with params 10, 2, .9, .1, .1 (As described in orig paper)
         //heuristicAlgorithms[2] = GreedyAlgorithim::greedyTSP; //not heuristic but its low cost and a nice baseline
 
         //0expRunner.runExperiment(8, 20, 4, 1, 1, allAlgorithms);
         //expRunner.exportResults("smallExp02.csv");
 
         double[] sparsity = {1, .9, .8, .7, .6, .5, .4, .3, .2, .1, .05};
-        //double[] sparsity = {1};
+        //double[] sparsity = {.5, .4, .3};
 
         for (int i = 0; i < sparsity.length; i++) {
-            expRunner.runGeneratedMatrixExperiment(6, 50, 10, 0, 2, sparsity[i], heuristicAlgorithms);
-            expRunner.exportResults("MasterSparseMatrixTestingSuccessIterations.csv", i != 0, String.format( "%3.0f",sparsity[i]*100));
+            expRunner.runGeneratedMatrixExperiment(6, 100, 10, 0, 2, sparsity[i], heuristicAlgorithms);
+            expRunner.exportResults("NewAlgoExpSystemTesting.csv", i != 0, String.format( "%3.0f",sparsity[i]*100));
         }
 
         //expRunner.runDatasetExperiment("MatrixDatasets/vlsi", heuristicAlgorithms);

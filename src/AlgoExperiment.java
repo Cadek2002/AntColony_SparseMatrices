@@ -74,7 +74,6 @@ public class AlgoExperiment {
                     thisResult = algoArray[k].apply(matrix);
                     Instant end = Instant.now();
                     //This is annoying I know
-                    thisResult.alias = String.valueOf(k);
                     thisResult.iteration = j;
                     thisResult.batchID = i;
                     thisResult.NanoSeconds = Duration.between(start, end).getNano();
