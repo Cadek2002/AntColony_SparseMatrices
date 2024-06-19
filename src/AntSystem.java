@@ -115,8 +115,8 @@ public class AntSystem {
             for (int j = 0; j < adjacencyMatrix.size(); j++) {
                 pheromoneMatrix.get(i).add(initialPheromone);
                 if (adjacencyMatrix.get(i).get(j) > 0) numProspects++;
-                numProspectsList.add(numProspects);
             }
+            numProspectsList.add(numProspects);
         }
         iterationsTillSuccess = -1;
 
@@ -239,7 +239,8 @@ public class AntSystem {
         double calculateEdgeWeightIncludeFutureProspects(int r, int s) {
             if (adjacencyMatrix.get(r).get(s) <= 0) return 0;
             //System.out.printf("Cost: %d\t distanceBias: %f\tPheromone: %f\n", adjacencyMatrix.get(r).get(s), distanceBiasCoefficient, pheromoneMatrix.get(r).get(s));
-            return Math.pow(1 / (double) adjacencyMatrix.get(r).get(s), distanceBiasCoefficient) * pheromoneMatrix.get(r).get(s) * ((double) adjacencyMatrix.size() - (double) 1 / numProspectsList.get(s) - 1);
+            //System.out.println(((double) adjacencyMatrix.size() / numProspectsList.get(s)));
+            return Math.pow(1 / (double) adjacencyMatrix.get(r).get(s), distanceBiasCoefficient) * pheromoneMatrix.get(r).get(s) * ((double) adjacencyMatrix.size() / numProspectsList.get(s));
         }
 
         public void chooseEdge(boolean greedy) {
