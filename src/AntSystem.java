@@ -288,11 +288,11 @@ public class AntSystem {
                 //kill the ant
                 cost = -1;
                 if (death_pen > 0) {
-                    System.out.println("Laying Death Trail:");
+                    //System.out.println("Laying Death Trail:");
                     for (int i = 1; i < path.size(); i++) {
-                        System.out.printf("%f", pheromoneMatrix.get(i-1).get(i));
+                        //System.out.printf("%f", pheromoneMatrix.get(i-1).get(i));
                         pheromoneMatrix.get(i-1).set(i, pheromoneMatrix.get(i-1).get(i) * (1-death_pen));
-                        System.out.printf("->%f\n", pheromoneMatrix.get(i-1).get(i));
+                        //System.out.printf("->%f\n", pheromoneMatrix.get(i-1).get(i));
                     }
                 }
 
