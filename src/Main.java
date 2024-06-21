@@ -34,27 +34,35 @@ public class Main {
 
         //Run Experiment
         AlgoExperiment expRunner = new AlgoExperiment();
-        Function<ArrayList<ArrayList<Integer>>, AlgoResult>[] heuristicAlgorithms = new Function[3];
-        Function<ArrayList<ArrayList<Integer>>, AlgoResult>[] lookahead = new Function[1];
+        Function<ArrayList<ArrayList<Integer>>, AlgoResult>[] heuristicAlgorithms = new Function[6];
+        Function<ArrayList<ArrayList<Integer>>, AlgoResult>[] singleTesting = new Function[4];
         //10 iteration ACM with params 10, 2, .9, .1, .1 (As described in orig paper)
 
-        heuristicAlgorithms[0] = AntSystem.stageAntSystemTSP("LookaheadAntSystem",10, 25, .9, 2, .1, .1, true, false);
-        heuristicAlgorithms[1] = AntSystem.stageAntSystemTSP("AntSystem",10, 25, .9, 2, .1, .1, false, false);
-        heuristicAlgorithms[2] = AntSystem.stageAntSystemTSP("AntColony",10, 25, .9, 2, .1, .1, false, true);
 
-        lookahead[0] = AntSystem.stageAntSystemTSP("LookaheadAntSystem",10, 25, .9, 2, .1, .1, true, false);
+
+        heuristicAlgorithms[0] = AntSystem.stageAntSystemTSP(new AntSystem("AntSystem",15, 25, .9, 2, .1, .1, false, false, 0));
+        heuristicAlgorithms[1] = AntSystem.stageAntSystemTSP(new AntSystem("LookaheadAntSystem",15, 25, .9, 2, .1, .1, true, false, 0));
+        heuristicAlgorithms[2] = AntSystem.stageAntSystemTSP(new AntSystem("AntColony",15, 25, .9, 2, .1, .1, false, true, 0));
+        heuristicAlgorithms[3] = AntSystem.stageAntSystemTSP(new AntSystem("LookaheadAntColony",15, 25, .9, 2, .1, .1, true, true, 0));
+        heuristicAlgorithms[4] = AntSystem.stageAntSystemTSP(new AntSystem("DeathpenAntSystem",15, 25, .9, 2, .1, .1, false, false, 0));
+        heuristicAlgorithms[5] = AntSystem.stageAntSystemTSP(new AntSystem("DeathpenAntColony",15, 25, .9, 2, .1, .1, false, true, 0));
+
+        singleTesting[0] = AntSystem.stageAntSystemTSP(new AntSystem("DeathpenAntColony001",15, 25, .9, 2, .1, .1, false, true, .001));
+        singleTesting[1] = AntSystem.stageAntSystemTSP(new AntSystem("DeathpenAntColony01",15, 25, .9, 2, .1, .1, false, true, .01));
+        singleTesting[2] = AntSystem.stageAntSystemTSP(new AntSystem("DeathpenAntColony05",15, 25, .9, 2, .1, .1, false, true, .05));
+        singleTesting[3] = AntSystem.stageAntSystemTSP(new AntSystem("DeathpenAntColony10",15, 25, .9, 2, .1, .1, false, true, .1));
 
         //heuristicAlgorithms[2] = GreedyAlgorithim::greedyTSP; //not heuristic but its low cost and a nice baseline
 
         //0expRunner.runExperiment(8, 20, 4, 1, 1, allAlgorithms);
         //expRunner.exportResults("smallExp02.csv");
 
-        double[] sparsity = {1, .9, .8, .7, .6, .5, .4, .3, .2, .1, .05};
-        //double[] sparsity = {1};
+        //double[] sparsity = {.5, .4, .3, .2, .1, .05};
+        double[] sparsity = {.2};
 
         for (int i = 0; i < sparsity.length; i++) {
-            expRunner.runGeneratedMatrixExperiment(6, 100, 200, 0, 2, sparsity[i], heuristicAlgorithms);
-            expRunner.exportResults("Lookahead Test.csv", i != 0, String.format( "%3.0f",sparsity[i]*100));
+            expRunner.runGeneratedMatrixExperiment(1, 1, 80, 0, 2, sparsity[i], singleTesting);
+            expRunner.exportResults("DeathPenTest.csv", i != 0, String.format( "%3.0f",sparsity[i]*100));
         }
 
         //expRunner.runDatasetExperiment("MatrixDatasets/vlsi", heuristicAlgorithms);

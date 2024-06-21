@@ -35,7 +35,7 @@ public class AlgoExperiment {
         }
 
         public ArrayList<Integer> run(ArrayList<ArrayList<Integer>> matrix) {
-            return AntSystem.antColonyMethodTSPIterationTracking(5, ants, iterations, biasedExplorationCoefficient, distanceBiasCoefficient, globalPheromoneDecayCoefficient, localPheromoneUpdateCoefficient, matrix);
+            return null;//AntSystem.antColonyMethodTSPIterationTracking(5, ants, iterations, biasedExplorationCoefficient, distanceBiasCoefficient, globalPheromoneDecayCoefficient, localPheromoneUpdateCoefficient, matrix);
         }
     }
     //Me messing with javaDocs

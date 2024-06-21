@@ -12,17 +12,16 @@ public class AntSystem {
     int numAnts, numIterations, currentBest, iterationsTillSuccess;
     ArrayList<Integer> bestPath;
     Ant[] colony;
-    double biasedExplorationCoefficient, distanceBiasCoefficient, pheromoneUpdateCoefficient, globalPheromoneDecayCoefficient, initialPheromone;
+    double biasedExplorationCoefficient, distanceBiasCoefficient, pheromoneUpdateCoefficient, globalPheromoneDecayCoefficient, initialPheromone, death_pen;
     ArrayList<ArrayList<Double>> pheromoneMatrix;
     ArrayList<ArrayList<Integer>> adjacencyMatrix;
     ArrayList<Integer> numProspectsList;
 
 
     //Variance Variable
-    boolean lookahead;
-    boolean cooperative;
+    boolean lookahead, cooperative;
 
-    public AntSystem(int numAnts, int numIterations, double biasedExplorationCoefficient, double distanceBiasCoefficient, double globalPheromoneDecayCoefficient, double localPheromoneUpdateCoefficient, boolean lookahead, boolean cooperative) {
+    public AntSystem(int numAnts, int numIterations, double biasedExplorationCoefficient, double distanceBiasCoefficient, double globalPheromoneDecayCoefficient, double localPheromoneUpdateCoefficient, boolean lookahead, boolean cooperative, double death_pen) {
         this.numAnts = numAnts;
         this.numIterations = numIterations;
         currentBest = -1;
@@ -32,10 +31,11 @@ public class AntSystem {
         this.pheromoneUpdateCoefficient = localPheromoneUpdateCoefficient;
         this.lookahead = lookahead;
         this.cooperative = cooperative;
+        this.death_pen = death_pen;
         colony = new Ant[numAnts];
     }
 
-    public AntSystem(String alias, int numAnts, int numIterations, double biasedExplorationCoefficient, double distanceBiasCoefficient, double globalPheromoneDecayCoefficient, double localPheromoneUpdateCoefficient, boolean lookahead, boolean cooperative) {
+    public AntSystem(String alias, int numAnts, int numIterations, double biasedExplorationCoefficient, double distanceBiasCoefficient, double globalPheromoneDecayCoefficient, double localPheromoneUpdateCoefficient, boolean lookahead, boolean cooperative, double death_pen) {
         this.alias = alias;
         this.numAnts = numAnts;
         this.numIterations = numIterations;
@@ -46,19 +46,19 @@ public class AntSystem {
         this.pheromoneUpdateCoefficient = localPheromoneUpdateCoefficient;
         this.lookahead = lookahead;
         this.cooperative = cooperative;
+        this.death_pen = death_pen;
         colony = new Ant[numAnts];
     }
 
-    public static AlgoResult antSystemTSP(int numAnts, int numIterations, double biasedExplorationCoefficient, double distanceBiasCoefficient, double globalPheromoneDecayCoefficient, double localPheromoneUpdateCoefficient, boolean lookahead, boolean cooperative, ArrayList<ArrayList<Integer>> adjMatrix) {
-        AntSystem antColony = new AntSystem(numAnts, numIterations, biasedExplorationCoefficient, distanceBiasCoefficient, globalPheromoneDecayCoefficient, localPheromoneUpdateCoefficient, lookahead, cooperative);
-        return antColony.applyAlgorithm(adjMatrix);
+    public static AlgoResult antSystemTSP(AntSystem algoObject, ArrayList<ArrayList<Integer>> adjMatrix) {
+        return algoObject.applyAlgorithm(adjMatrix);
     }
 
 
 
 
-    public static ArrayList<Integer> antColonyMethodTSPIterationTracking(int logInterval, int numAnts, int numIterations, double biasedExplorationCoefficient, double distanceBiasCoefficient, double globalPheromoneDecayCoefficient, double localPheromoneUpdateCoefficient, ArrayList<ArrayList<Integer>> adjMatrix) {
-        AntSystem antColony = new AntSystem(numAnts, numIterations, biasedExplorationCoefficient, distanceBiasCoefficient, globalPheromoneDecayCoefficient, localPheromoneUpdateCoefficient, false, false);
+/*    public static ArrayList<Integer> antColonyMethodTSPIterationTracking(int logInterval, int numAnts, int numIterations, double biasedExplorationCoefficient, double distanceBiasCoefficient, double globalPheromoneDecayCoefficient, double localPheromoneUpdateCoefficient, ArrayList<ArrayList<Integer>> adjMatrix) {
+        AntSystem antColony = new AntSystem(numAnts, numIterations, biasedExplorationCoefficient, distanceBiasCoefficient, globalPheromoneDecayCoefficient, localPheromoneUpdateCoefficient, false, false, false);
         antColony.adjacencyMatrix = adjMatrix;
         ArrayList<Integer> bestHistory = new ArrayList<>();
         int startingPoint;
@@ -79,7 +79,7 @@ public class AntSystem {
         }
         antColony.bestPath.remove(antColony.bestPath.size() - 1);
         return bestHistory;
-    }
+    }*/
 
 
     AlgoResult applyAlgorithm(ArrayList<ArrayList<Integer>> adjMatrix) {
@@ -184,11 +184,10 @@ public class AntSystem {
     }
 
     public static AlgoResult antSystemMethodDefaultTSP(ArrayList<ArrayList<Integer>> adjMatrix) {
-        return antSystemTSP(10, 50, .9, 2, .1, .1, false, false, adjMatrix);
+        return antSystemTSP(new AntSystem(10, 50, .9, 2, .1, .1, false, false,0), adjMatrix);
     }
 
-    public static Function<ArrayList<ArrayList<Integer>>, AlgoResult> stageAntSystemTSP(String setName, int numAnts, int numIterations, double biasedExplorationCoefficient, double distanceBiasCoefficient, double globalPheromoneDecayCoefficient, double localPheromoneUpdateCoefficient, boolean lookahead, boolean cooperative) {
-        AntSystem algorithmObject = new AntSystem(setName, numAnts, numIterations, biasedExplorationCoefficient, distanceBiasCoefficient, globalPheromoneDecayCoefficient, localPheromoneUpdateCoefficient, lookahead, cooperative);
+    public static Function<ArrayList<ArrayList<Integer>>, AlgoResult> stageAntSystemTSP(AntSystem algorithmObject) {
         return algorithmObject::applyAlgorithm;
     }
 
@@ -288,6 +287,15 @@ public class AntSystem {
             } else {
                 //kill the ant
                 cost = -1;
+                if (death_pen > 0) {
+                    System.out.println("Laying Death Trail:");
+                    for (int i = 1; i < path.size(); i++) {
+                        System.out.printf("%f", pheromoneMatrix.get(i-1).get(i));
+                        pheromoneMatrix.get(i-1).set(i, pheromoneMatrix.get(i-1).get(i) * (1-death_pen));
+                        System.out.printf("->%f\n", pheromoneMatrix.get(i-1).get(i));
+                    }
+                }
+
             }
             //System.out.printf("Greedy: %b\t%s\tCost: %d\n",greedy, path, cost);
         }
