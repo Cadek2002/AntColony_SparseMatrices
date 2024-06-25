@@ -178,9 +178,9 @@ public class HelperFunctions {
         return sum;
     }
     public static boolean edgeInPath(ArrayList<Integer> path, int x, int y) {
-        for (int i = 0; i < path.size(); i++) {
+        for (int i = 0; i < path.size()-1; i++) {
             if (path.get(i) == x)
-                return y == path.get(i == path.size()-1 ? path.get(0) : path.get(i+1));
+                return path.get(i+1) == y;
         }
         return false;
     }

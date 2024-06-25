@@ -9,7 +9,7 @@ public class AntSystem {
     //Algo Name for parameter set
     String alias;
     static Random r = new Random();
-    int numAnts, numIterations, currentBest, iterationsTillSuccess;
+    int numAnts, numIterations, bestCost, iterationsTillSuccess;
     ArrayList<Integer> bestPath;
     Ant[] colony;
     double biasedExplorationCoefficient, distanceBiasCoefficient, pheromoneUpdateCoefficient, globalPheromoneDecayCoefficient, initialPheromone, death_pen;
@@ -24,7 +24,7 @@ public class AntSystem {
     public AntSystem(int numAnts, int numIterations, double biasedExplorationCoefficient, double distanceBiasCoefficient, double globalPheromoneDecayCoefficient, double localPheromoneUpdateCoefficient, boolean lookahead, boolean cooperative, double death_pen) {
         this.numAnts = numAnts;
         this.numIterations = numIterations;
-        currentBest = -1;
+        bestCost = -1;
         this.biasedExplorationCoefficient = biasedExplorationCoefficient;
         this.distanceBiasCoefficient = distanceBiasCoefficient;
         this.globalPheromoneDecayCoefficient = globalPheromoneDecayCoefficient;
@@ -39,7 +39,7 @@ public class AntSystem {
         this.alias = alias;
         this.numAnts = numAnts;
         this.numIterations = numIterations;
-        currentBest = -1;
+        bestCost = -1;
         this.biasedExplorationCoefficient = biasedExplorationCoefficient;
         this.distanceBiasCoefficient = distanceBiasCoefficient;
         this.globalPheromoneDecayCoefficient = globalPheromoneDecayCoefficient;
@@ -89,7 +89,7 @@ public class AntSystem {
         //NEW Initialization for Sparse Graphs (Average Choice Index)
         int sum, numViable;
         initialPheromone = 0;
-        currentBest = -1;
+        bestCost = -1;
         bestPath = null;
         for (int i = 0; i < adjacencyMatrix.size(); i++) {
             sum = 0;
@@ -134,7 +134,7 @@ public class AntSystem {
             evaluateColony();
         }
         //bestPath.remove(bestPath.size() - 1);
-        AlgoResult result = new AlgoResult(alias, currentBest, bestPath, iterationsTillSuccess);
+        AlgoResult result = new AlgoResult(alias, bestCost, bestPath, iterationsTillSuccess);
         return result;
     }
 
@@ -150,23 +150,27 @@ public class AntSystem {
     void evaluateColony() {
         //Find Best Path
         //System.out.print("Colony Status (Costs): ");
+        //bestPath = colony[0].path;
         for (int i = 0; i < numAnts; i++) {
             //System.out.printf(" %d", colony[i].cost);
-            if (currentBest == -1 || (currentBest > colony[i].cost && colony[i].cost != -1)) {
-                if (currentBest == -1 && colony[i].cost != -1) iterationsTillSuccess = i;
-                currentBest = colony[i].cost;
-                bestPath = colony[i].path;
+            if (bestCost == -1 || (bestCost > colony[i].cost && colony[i].cost != -1)) {
+                if (bestCost == -1 && colony[i].cost != -1) iterationsTillSuccess = i;
+                bestCost = colony[i].cost;
+                //Path is set to either the smallest successful path or the longest dead one
+                if (bestPath == null || colony[i].path.size() >= bestPath.size())
+                    bestPath = colony[i].path;
             }
         }
         double updateSum = 0;
         //Global Update Pheromone Trails if best path was found
-        if (currentBest != -1)
+        if (bestCost != -1) {
             for (int i = 0; i < pheromoneMatrix.size(); i++) {
                 for (int j = 0; j < pheromoneMatrix.size(); j++) {
                     //Ant Colony System Global Updates using best path
+
                     if (cooperative)
-                        pheromoneMatrix.get(i).set(j, (1 - globalPheromoneDecayCoefficient) * pheromoneMatrix.get(i).get(j) + globalPheromoneDecayCoefficient * (HelperFunctions.edgeInPath(bestPath, i, j) ? 1 / (double) currentBest : 0));
-                    //Ant System Global Updates using any path visited this iteration
+                        pheromoneMatrix.get(i).set(j, (1 - globalPheromoneDecayCoefficient) * pheromoneMatrix.get(i).get(j) + globalPheromoneDecayCoefficient * (HelperFunctions.edgeInPath(bestPath, i, j) ? 1 / (double) bestCost : 0));
+                        //Ant System Global Updates using any path visited this iteration
                     else {
                         updateSum = 0;
                         for (int k = 0; k < numAnts; k++) {
@@ -177,6 +181,26 @@ public class AntSystem {
                     }
                 }
             }
+        }
+        //If no path is found, use length to determine pheromone updates
+        else {
+            for (int i = 0; i < pheromoneMatrix.size(); i++) {
+                for (int j = 0; j < pheromoneMatrix.size(); j++) {
+                    //Ant Colony System Global Updates using best path
+                    if (cooperative)
+                        pheromoneMatrix.get(i).set(j, (1 - globalPheromoneDecayCoefficient) * pheromoneMatrix.get(i).get(j) + globalPheromoneDecayCoefficient * (HelperFunctions.edgeInPath(bestPath, i, j) ? ((double) bestPath.size()) / adjacencyMatrix.size() : 0));
+                        //Ant System Global Updates using any path visited this iteration
+                    else {
+                        updateSum = 0;
+                        for (int k = 0; k < numAnts; k++) {
+                            if (colony[k].cost != -1 && HelperFunctions.edgeInPath(colony[k].path, i, j))
+                                updateSum += pheromoneUpdateCoefficient / (adjacencyMatrix.size() - bestPath.size());
+                        }
+                        pheromoneMatrix.get(i).set(j, (1 - globalPheromoneDecayCoefficient) * pheromoneMatrix.get(i).get(j) + updateSum);
+                    }
+                }
+            }
+        }
 
         //Reset Ants (Keep Global best path
         for (int i = 0; i < numAnts; i++)
