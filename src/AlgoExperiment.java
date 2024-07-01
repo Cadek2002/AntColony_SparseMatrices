@@ -67,7 +67,8 @@ public class AlgoExperiment {
             System.out.printf("\nRunning Batch %d, matrix size %d: ", i, n);
             for (int j = 0; j < batchSize; j++) {
                 System.out.printf(" %d", j);
-                matrix = HelperFunctions.createMatrix(n, 1, 9, matrixDensity, String.format("experimentMatrices: %d_matrix%d_%d.csv", n, i, j));
+                //matrix = HelperFunctions.createMatrix(n, 1, 9, matrixDensity, String.format("%d_matrix%d_%d.csv", n, i, j));
+                matrix = HelperFunctions.createMatrix(n, 1, 9, matrixDensity, "");
                 //HelperFunctions.printMatrix(matrix);
                 for (int k = 0; k < algoArray.length; k++) {
                     Instant start = Instant.now();
@@ -128,7 +129,8 @@ public class AlgoExperiment {
             System.out.printf("\nRunning Batch %d, matrix size %d: ", i, n);
             for (int j = 0; j < batchSize; j++) {
                 System.out.printf("%d", j);
-                matrix = HelperFunctions.createMatrix(n, 1, 9, 1, String.format("experimentMatrices: %d_matrix%d_%d.csv", n, i, j));
+                //matrix = HelperFunctions.createMatrix(n, 1, 9, 1, String.format("experimentMatrices: %d_matrix%d_%d.csv", n, i, j));
+                matrix = HelperFunctions.createMatrix(n, 1, 9, 1, "");
                 for (int k = 0; k < paramArray.size(); k++) {
                     Instant start = Instant.now();
                     pathResult = paramArray.get(k).run(matrix);

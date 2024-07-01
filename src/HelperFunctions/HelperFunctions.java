@@ -141,7 +141,7 @@ public class HelperFunctions {
             y = (element / size) + ((((element % size) + offset) >= size) ? 1 : 0);
             output.get(x).set(y, (int)(Math.random() * (max-min) + min));
         }
-        exportFile(output, outputName, null);
+        if (!outputName.isEmpty()) exportFile(output, outputName, null);
         return output;
     }
     //Find Cycles

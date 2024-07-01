@@ -12,39 +12,41 @@ public class AntSystem {
     int numAnts, numIterations, bestCost, iterationsTillSuccess;
     ArrayList<Integer> bestPath;
     Ant[] colony;
-    double biasedExplorationCoefficient, distanceBiasCoefficient, pheromoneUpdateCoefficient, globalPheromoneDecayCoefficient, initialPheromone, death_pen;
+    double preSuccessBiasedExplorationCoefficient, biasedExplorationCoefficient, distanceBiasCoefficient, pheromoneUpdateCoefficient, globalPheromoneDecayCoefficient, initialPheromone, death_pen, lookahead_coef;
     ArrayList<ArrayList<Double>> pheromoneMatrix;
     ArrayList<ArrayList<Integer>> adjacencyMatrix;
     ArrayList<Integer> numProspectsList;
 
 
     //Variance Variable
-    boolean lookahead, cooperative;
+    boolean cooperative;
 
-    public AntSystem(int numAnts, int numIterations, double biasedExplorationCoefficient, double distanceBiasCoefficient, double globalPheromoneDecayCoefficient, double localPheromoneUpdateCoefficient, boolean lookahead, boolean cooperative, double death_pen) {
+    public AntSystem(int numAnts, int numIterations, double preSuccessBiasedExplorationCoefficient, double biasedExplorationCoefficient, double distanceBiasCoefficient, double globalPheromoneDecayCoefficient, double localPheromoneUpdateCoefficient, double lookahead_coef, boolean cooperative, double death_pen) {
         this.numAnts = numAnts;
         this.numIterations = numIterations;
         bestCost = -1;
+        this.preSuccessBiasedExplorationCoefficient = preSuccessBiasedExplorationCoefficient;
         this.biasedExplorationCoefficient = biasedExplorationCoefficient;
         this.distanceBiasCoefficient = distanceBiasCoefficient;
         this.globalPheromoneDecayCoefficient = globalPheromoneDecayCoefficient;
         this.pheromoneUpdateCoefficient = localPheromoneUpdateCoefficient;
-        this.lookahead = lookahead;
+        this.lookahead_coef = lookahead_coef;
         this.cooperative = cooperative;
         this.death_pen = death_pen;
         colony = new Ant[numAnts];
     }
 
-    public AntSystem(String alias, int numAnts, int numIterations, double biasedExplorationCoefficient, double distanceBiasCoefficient, double globalPheromoneDecayCoefficient, double localPheromoneUpdateCoefficient, boolean lookahead, boolean cooperative, double death_pen) {
+    public AntSystem(String alias, int numAnts, int numIterations, double preSuccessBiasedExplorationCoefficient, double biasedExplorationCoefficient, double distanceBiasCoefficient, double globalPheromoneDecayCoefficient, double localPheromoneUpdateCoefficient, double lookahead_coef, boolean cooperative, double death_pen) {
         this.alias = alias;
         this.numAnts = numAnts;
         this.numIterations = numIterations;
         bestCost = -1;
+        this.preSuccessBiasedExplorationCoefficient = preSuccessBiasedExplorationCoefficient;
         this.biasedExplorationCoefficient = biasedExplorationCoefficient;
         this.distanceBiasCoefficient = distanceBiasCoefficient;
         this.globalPheromoneDecayCoefficient = globalPheromoneDecayCoefficient;
         this.pheromoneUpdateCoefficient = localPheromoneUpdateCoefficient;
-        this.lookahead = lookahead;
+        this.lookahead_coef = lookahead_coef;
         this.cooperative = cooperative;
         this.death_pen = death_pen;
         colony = new Ant[numAnts];
@@ -54,6 +56,8 @@ public class AntSystem {
         return algoObject.applyAlgorithm(adjMatrix);
     }
 
+
+    
 
 
 
@@ -143,7 +147,7 @@ public class AntSystem {
         for (int i = 0; i < numAnts; i++) {
             //iterate each ant, using the global state of the map, and the local state of the ant
             if (colony[i].cost != -1)
-                colony[i].chooseEdge(r.nextDouble() > biasedExplorationCoefficient);
+                colony[i].chooseEdge(r.nextDouble() > (bestCost == -1 ? preSuccessBiasedExplorationCoefficient : biasedExplorationCoefficient));
         }
     }
 
@@ -208,7 +212,7 @@ public class AntSystem {
     }
 
     public static AlgoResult antSystemMethodDefaultTSP(ArrayList<ArrayList<Integer>> adjMatrix) {
-        return antSystemTSP(new AntSystem(10, 50, .9, 2, .1, .1, false, false,0), adjMatrix);
+        return antSystemTSP(new AntSystem(10, 50, .9,.9, 2, .1, .1, 0, false,0), adjMatrix);
     }
 
     public static Function<ArrayList<ArrayList<Integer>>, AlgoResult> stageAntSystemTSP(AntSystem algorithmObject) {
@@ -263,7 +267,7 @@ public class AntSystem {
             if (adjacencyMatrix.get(r).get(s) <= 0) return 0;
             //System.out.printf("Cost: %d\t distanceBias: %f\tPheromone: %f\n", adjacencyMatrix.get(r).get(s), distanceBiasCoefficient, pheromoneMatrix.get(r).get(s));
             //System.out.println(((double) adjacencyMatrix.size() / numProspectsList.get(s)));
-            return Math.pow(1 / (double) adjacencyMatrix.get(r).get(s), distanceBiasCoefficient) * pheromoneMatrix.get(r).get(s) * ((double) adjacencyMatrix.size() / numProspectsList.get(s));
+            return Math.pow(1 / (double) adjacencyMatrix.get(r).get(s), distanceBiasCoefficient) * pheromoneMatrix.get(r).get(s) * Math.pow((double) adjacencyMatrix.size() / numProspectsList.get(s), lookahead_coef);
         }
 
         public void chooseEdge(boolean greedy) {
@@ -280,7 +284,7 @@ public class AntSystem {
                     //If the city hasn't been visited
                     if (!candidateList[i]) {
                         //Calculate probability of current edge
-                        currentProbability = lookahead ? calculateEdgeWeightIncludeFutureProspects(path.get(path.size() - 1), i) : calculateEdgeWeight(path.get(path.size() - 1), i);
+                        currentProbability = lookahead_coef > 0 ? calculateEdgeWeightIncludeFutureProspects(path.get(path.size() - 1), i) : calculateEdgeWeight(path.get(path.size() - 1), i);
                         //Set Iterative probability
                         iterativeProbability += currentProbability;
                         //Create data pair
