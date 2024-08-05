@@ -1,15 +1,16 @@
 import HelperFunctions.AlgoResult;
+import HelperFunctions.HelperFunctions;
+
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
-class BranchAndBoundFirstPathAlgorithm {
+class DFSFirstPathAlgorithm
+
+{
     int N;
     int[] final_path;
     boolean[] visited;
-    int final_res;
     ArrayList<ArrayList<Integer>> adj;
-
     boolean pathFound;
 
     public AlgoResult apply(ArrayList<ArrayList<Integer>> adj) {
@@ -18,14 +19,12 @@ class BranchAndBoundFirstPathAlgorithm {
 
         final_path = new int[N + 1];
         visited = new boolean[N];
-        final_res = Integer.MAX_VALUE;
         pathFound = false;
 
-        TSP();
-
+        findHamiltonianPath();
         ArrayList<Integer> finalArraylist = new ArrayList<>(N+1);
         for (int i : final_path) finalArraylist.add(i);
-        return new AlgoResult("BranchAndBoundLimited", final_res, finalArraylist, 0);
+        return new AlgoResult("HamiltonianPathDFS", pathFound ? HelperFunctions.calculateCost(finalArraylist, adj, false) : -1, finalArraylist, 0);
     }
 
     void copyToFinal(int[] curr_path) {
@@ -33,42 +32,34 @@ class BranchAndBoundFirstPathAlgorithm {
         final_path[N] = curr_path[0];
     }
 
-    void TSPRec(int curr_weight, int level, int[] curr_path) {
+    void dfs(int v, int level, int[] path) {
         if (pathFound) return;
 
-        if (level == N) {
-            if (adj.get(curr_path[level - 1]).get(curr_path[0]) > 0) {
-                int curr_res = curr_weight + adj.get(curr_path[level - 1]).get(curr_path[0]);
-                copyToFinal(curr_path);
-                final_res = curr_res;
+        path[level] = v;
+        visited[v] = true;
+
+        if (level == N - 1) {
+            if (adj.get(path[level]).get(path[0]) > 0) {
+                copyToFinal(path);
                 pathFound = true;
             }
+            visited[v] = false;
             return;
         }
 
         for (int i = 0; i < N; i++) {
-            if (pathFound) return;
-            if (adj.get(curr_path[level - 1]).get(i) > 0 && !visited[i]) {
-                curr_weight += adj.get(curr_path[level - 1]).get(i);
-                curr_path[level] = i;
-                visited[i] = true;
-
-                TSPRec(curr_weight, level + 1, curr_path);
-
-                curr_weight -= adj.get(curr_path[level - 1]).get(i);
-                visited[i] = false;
+            if (!visited[i] && adj.get(v).get(i) > 0) {
+                dfs(i, level + 1, path);
             }
         }
+
+        visited[v] = false;
     }
 
-    void TSP() {
-        int[] curr_path = new int[N + 1];
+    void findHamiltonianPath() {
+        int[] path = new int[N + 1];
         Arrays.fill(visited, false);
-
-        visited[0] = true;
-        curr_path[0] = 0;
-
-        TSPRec(0, 1, curr_path);
+        dfs(0, 0, path);
     }
 
     public static void main(String[] args) {
@@ -80,10 +71,14 @@ class BranchAndBoundFirstPathAlgorithm {
         matrix.add(new ArrayList<>(Arrays.asList(0, 2, 0, 0, 1)));
         matrix.add(new ArrayList<>(Arrays.asList(3, 4, 6, 5, 0)));
 
-        BranchAndBoundFirstPathAlgorithm algo = new BranchAndBoundFirstPathAlgorithm();
+        DFSFirstPathAlgorithm algo = new DFSFirstPathAlgorithm();
         AlgoResult result = algo.apply(matrix);
 
-        System.out.printf("Min Cost: %d, MinPath: %s%n", result.cost, result.path.toString());
+        if (result.cost != -1) {
+            System.out.printf("Cost: %d Path Found: %s%n", result.cost, result.path.toString());
+        } else {
+            System.out.println("No Path Found");
+        }
 
         // Apply the algorithm again on a different matrix
         ArrayList<ArrayList<Integer>> newMatrix = new ArrayList<>(5);
@@ -96,6 +91,10 @@ class BranchAndBoundFirstPathAlgorithm {
 
         result = algo.apply(newMatrix);
 
-        System.out.printf("Min Cost: %d, MinPath: %s%n", result.cost, result.path.toString());
+        if (result.cost != -1) {
+            System.out.printf("Cost: %d, Path Found: %s%n", result.cost, result.path.toString());
+        } else {
+            System.out.println("No Path Found");
+        }
     }
 }

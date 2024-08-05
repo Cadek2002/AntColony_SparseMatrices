@@ -77,6 +77,7 @@ public class AlgoExperiment {
                     //This is annoying I know
                     thisResult.iteration = j;
                     thisResult.batchID = i;
+                    thisResult.batchSize = n;
                     thisResult.NanoSeconds = Duration.between(start, end).getNano();
                     thisResult.Seconds = Duration.between(start, end).getSeconds();
 
@@ -151,12 +152,12 @@ public class AlgoExperiment {
         try {
             BufferedWriter writer = new BufferedWriter(new FileWriter(output, append));
             if (!append)
-                writer.write("Algorithm, ResultID, BatchID, Cost, Path, Seconds, Nanoseconds, Total, Success Iteration, Sparsity\n");
+                writer.write("Algorithm, ResultID, BatchID, Matrix Size, Cost, Path, Seconds, Nanoseconds, Total, Success Iteration, Sparsity\n");
 
             for (int i = 0; i < results.size(); i++) {
                 for (AlgoResult res : results.get(i))
                     if (res.iteration != -1) {
-                        writer.write(String.format("%s,%d,%d,%d,%s,%d,%d,%f, %d", res.alias, i, res.batchID, res.cost, HelperFunctions.getStringCSV(res.path), res.Seconds, res.NanoSeconds, res.Seconds + (double) res.NanoSeconds / 1000000000, res.successIteration));
+                        writer.write(String.format("%s,%d,%d,%d,%d,%s,%d,%d,%f, %d", res.alias, i, res.batchID, res.batchSize ,res.cost, HelperFunctions.getStringCSV(res.path), res.Seconds, res.NanoSeconds, res.Seconds + (double) res.NanoSeconds / 1000000000, res.successIteration));
                         for (String item : additionalArgs) {
                             writer.write(String.format(",%s", item));
                         }

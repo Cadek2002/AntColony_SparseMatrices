@@ -8,9 +8,11 @@ public class AlgoResult {
     public long Seconds;
     public long NanoSeconds;
     public int batchID;
+    public int batchSize;
     public String alias;
     public int iteration;
     public int successIteration;
+
 
 
     public AlgoResult(String algoAlias, int cost, ArrayList<Integer> path, int successIteration) {
